@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instagram Follow Back Checker</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="background-animation"></div>
+
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="#" class="nav-link active">🔍 Check</a>
+            <a href="#desktop-guide" class="nav-link">Desktop Guide</a>
+            <a href="#mobile-guide" class="nav-link">Mobile Guide</a>
+            <a href="#contact" class="nav-link">Contact Us</a>
+        </div>
+    </nav>
+
+    <main class="container">
+        <h1 class="main-title">Find Out Who Doesn't Follow Back on Instagram</h1>
+        <p class="subtitle">Upload your Instagram data files to see who's not following you back!</p>
+
+        <div class="upload-section">
+            <div class="upload-card">
+                <h3>📥 Upload Followers</h3>
+                <p class="upload-instruction">Upload your followers file (probably "followers_1.json", etc.)</p>
+                <input type="file" id="followersFile" accept=".json" class="file-input">
+                <label for="followersFile" class="file-label">Choose Files</label>
+                <p class="file-status" id="followersStatus">No file selected</p>
+            </div>
+
+            <div class="upload-card">
+                <h3>📤 Upload Following</h3>
+                <p class="upload-instruction">Upload your following file (probably "following.json", etc.)</p>
+                <input type="file" id="followingFile" accept=".json" class="file-input">
+                <label for="followingFile" class="file-label">Choose Files</label>
+                <p class="file-status" id="followingStatus">No file selected</p>
+            </div>
+        </div>
+
+        <button id="compareBtn" class="compare-btn" disabled>Compare</button>
+
+        <div id="results" class="results-section" style="display: none;">
+            <h2>Results</h2>
+            <div class="stats-container">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalFollowers">0</div>
+                    <div class="stat-label">Total Followers</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="totalFollowing">0</div>
+                    <div class="stat-label">Total Following</div>
+                </div>
+                <div class="stat-card highlight">
+                    <div class="stat-number" id="notFollowingBack">0</div>
+                    <div class="stat-label">Not Following Back</div>
+                </div>
+            </div>
+
+            <div class="list-container">
+                <h3>People Not Following You Back:</h3>
+                <ul id="notFollowingList" class="user-list"></ul>
+            </div>
+        </div>
+    </main>
+
+    <section id="desktop-guide" class="guide-section">
+        <div class="container">
+            <h2>📖 Desktop Guide</h2>
+            <div class="guide-content">
+                <ol>
+                    <li>Go to Instagram on your desktop browser</li>
+                    <li>Navigate to Settings → Privacy and Security → Data Download</li>
+                    <li>Request a download of your data (JSON format)</li>
+                    <li>Wait for Instagram to send you the download link via email</li>
+                    <li>Download and extract the ZIP file</li>
+                    <li>Find the "followers_1.json" and "following.json" files in the connections folder</li>
+                    <li>Upload both files to this tool and click Compare!</li>
+                </ol>
+            </div>
+        </div>
+    </section>
+
+    <section id="mobile-guide" class="guide-section">
+        <div class="container">
+            <h2>📱 Mobile Guide</h2>
+            <div class="guide-content">
+                <ol>
+                    <li>Open the Instagram app on your phone</li>
+                    <li>Go to your profile and tap the menu (three lines)</li>
+                    <li>Tap Settings → Security → Download Data</li>
+                    <li>Enter your email and request download</li>
+                    <li>Wait for the email from Instagram (can take up to 48 hours)</li>
+                    <li>Download the ZIP file and extract it</li>
+                    <li>Transfer the files to your device or use the files directly</li>
+                    <li>Upload the followers and following JSON files here!</li>
+                </ol>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="footer-links">
+            <a href="#about">About</a>
+            <a href="#contact">Contact Us</a>
+            <a href="#terms">Terms of Service</a>
+            <a href="#privacy">Privacy Policy</a>
+        </div>
+        <p class="copyright">© 2025. All rights reserved.</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
