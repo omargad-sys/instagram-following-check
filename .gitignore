@@ -1,0 +1,10 @@
+# Session documentation (local only)
+session-summary.md
+GIT_REMOTE
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
