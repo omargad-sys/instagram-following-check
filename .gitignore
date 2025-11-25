@@ -2,6 +2,11 @@
 session-summary.md
 GIT_REMOTE
 
+# AI context files (local only)
+CLAUDE.md
+AGENTS.md
+GEMINI.md
+
 # macOS
 .DS_Store
 

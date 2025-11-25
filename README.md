@@ -72,12 +72,26 @@ Your Instagram data is sensitive. This tool:
 
 Free to use and modify.
 
-## Support
+## Troubleshooting
 
-If you encounter any issues, please check that:
-- You're using the correct JSON files from Instagram
-- The files are from the `connections` folder in your data download
-- Your browser is up to date
+If you see "0 followers" or "0 following" after uploading files:
+
+1. **Open Browser Console** (Press F12 or Right-click → Inspect → Console tab)
+2. **Upload your files again**
+3. **Check the console output** - you'll see detailed information about your data structure
+4. **Look for messages like:**
+   - "Parsing Instagram data: ..."
+   - "Data is an array with X items" or "Data is an object with keys: ..."
+   - "Extracted X usernames"
+
+The tool now includes enhanced debugging to help identify why parsing might fail. If you still have issues, the console output will show exactly what format your Instagram export is using.
+
+### Other Common Issues:
+
+- Ensure you're using the correct JSON files from Instagram's data download
+- Files should be from the `connections` folder in your data download
+- Make sure your browser is up to date
+- Try refreshing the page and uploading files again
 
 ---
 

@@ -200,6 +200,11 @@ body {
     font-weight: 600;
 }
 
+.file-status.warning {
+    color: #f59e0b;
+    font-weight: 600;
+}
+
 .compare-btn {
     display: block;
     margin: 2rem auto;
