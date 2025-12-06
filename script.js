@@ -25,36 +25,48 @@ function handleFileUpload(event, type) {
     reader.onload = (e) => {
         try {
             const data = JSON.parse(e.target.result);
+            console.log(`\n=== Parsing ${type} file: ${file.name} ===`);
+            console.log('Raw JSON structure:', JSON.stringify(data, null, 2).substring(0, 500) + '...');
+
+            const statusElement = type === 'followers' ? followersStatus : followingStatus;
+
+            // Reset status classes
+            statusElement.classList.remove('success', 'warning', 'error');
 
             if (type === 'followers') {
                 followersData = parseInstagramData(data);
                 if (followersData.length === 0) {
-                    followersStatus.textContent = `⚠️ ${file.name} loaded but found 0 followers. Check browser console for details.`;
-                    followersStatus.classList.add('warning');
-                    console.error('Could not extract followers from data. Data structure:', data);
+                    statusElement.textContent = `⚠️ ${file.name} - 0 followers found. Check console (F12).`;
+                    statusElement.classList.add('warning');
+                    console.error('Could not extract followers. Full data:', data);
                 } else {
-                    followersStatus.textContent = `✓ ${file.name} loaded (${followersData.length} followers)`;
-                    followersStatus.classList.add('success');
+                    statusElement.textContent = `✓ ${file.name} (${followersData.length} followers)`;
+                    statusElement.classList.add('success');
+                    console.log('Successfully extracted followers:', followersData.slice(0, 5), '...');
                 }
             } else {
                 followingData = parseInstagramData(data);
                 if (followingData.length === 0) {
-                    followingStatus.textContent = `⚠️ ${file.name} loaded but found 0 following. Check browser console for details.`;
-                    followingStatus.classList.add('warning');
-                    console.error('Could not extract following from data. Data structure:', data);
+                    statusElement.textContent = `⚠️ ${file.name} - 0 following found. Check console (F12).`;
+                    statusElement.classList.add('warning');
+                    console.error('Could not extract following. Full data:', data);
                 } else {
-                    followingStatus.textContent = `✓ ${file.name} loaded (${followingData.length} following)`;
-                    followingStatus.classList.add('success');
+                    statusElement.textContent = `✓ ${file.name} (${followingData.length} following)`;
+                    statusElement.classList.add('success');
+                    console.log('Successfully extracted following:', followingData.slice(0, 5), '...');
                 }
             }
 
-            // Enable compare button if both files are loaded
-            if (followersData && followingData) {
+            // Enable compare button if both files are loaded with data
+            if (followersData && followersData.length > 0 && followingData && followingData.length > 0) {
                 compareBtn.disabled = false;
             }
         } catch (error) {
-            alert(`Error reading ${type} file. Please make sure it's a valid Instagram JSON file.`);
-            console.error('Error details:', error);
+            const statusElement = type === 'followers' ? followersStatus : followingStatus;
+            statusElement.classList.remove('success', 'warning');
+            statusElement.classList.add('error');
+            statusElement.textContent = `❌ ${file.name} - Invalid JSON file`;
+            console.error('JSON parse error:', error);
         }
     };
 
@@ -71,22 +83,44 @@ function parseInstagramData(data) {
     // Check if it's an array
     if (Array.isArray(data)) {
         console.log('Data is an array with', data.length, 'items');
-        usernames = data.map(item => {
-            // Try different possible structures
-            if (item.string_list_data && item.string_list_data[0]) {
-                return item.string_list_data[0].value;
+
+        for (const item of data) {
+            // Handle string_list_data - extract ALL users from it, not just first
+            if (item.string_list_data && Array.isArray(item.string_list_data)) {
+                for (const entry of item.string_list_data) {
+                    if (entry.value) {
+                        usernames.push(entry.value);
+                    } else if (entry.href) {
+                        // Extract username from Instagram URL
+                        const match = entry.href.match(/instagram\.com\/([^\/\?]+)/);
+                        if (match) {
+                            usernames.push(match[1]);
+                        }
+                    }
+                }
             }
-            if (item.username) {
-                return item.username;
+            // Handle direct username property
+            else if (item.username) {
+                usernames.push(item.username);
             }
-            if (item.value) {
-                return item.value;
+            // Handle direct value property
+            else if (item.value) {
+                usernames.push(item.value);
             }
-            if (typeof item === 'string') {
-                return item;
+            // Handle string items
+            else if (typeof item === 'string') {
+                usernames.push(item);
             }
-            return null;
-        }).filter(Boolean);
+            // Handle nested user object
+            else if (item.user && item.user.username) {
+                usernames.push(item.user.username);
+            }
+            // Handle name property (some formats use this)
+            else if (item.name) {
+                usernames.push(item.name);
+            }
+        }
+
         console.log('Extracted', usernames.length, 'usernames from array');
     }
     // Check if it's an object with a nested array
@@ -95,26 +129,37 @@ function parseInstagramData(data) {
 
         // Try to find the array in common Instagram data structures
         const possibleKeys = [
-            'followers',
-            'following',
             'relationships_following',
             'relationships_followers',
+            'followers',
+            'following',
             'users',
             'data',
-            'items'
+            'items',
+            'list',
+            'connections'
         ];
 
-        for (let key of possibleKeys) {
-            if (data[key] && Array.isArray(data[key])) {
-                console.log('Found array at key:', key);
-                return parseInstagramData(data[key]);
+        // First check known keys
+        for (const key of possibleKeys) {
+            if (data[key]) {
+                if (Array.isArray(data[key])) {
+                    console.log('Found array at key:', key);
+                    return parseInstagramData(data[key]);
+                } else if (typeof data[key] === 'object') {
+                    console.log('Found object at key:', key, '- checking nested');
+                    const result = parseInstagramData(data[key]);
+                    if (result.length > 0) {
+                        return result;
+                    }
+                }
             }
         }
 
-        // Check for nested objects that might contain arrays
-        for (let key in data) {
-            if (data[key] && typeof data[key] === 'object' && !Array.isArray(data[key])) {
-                // Try recursively on nested objects
+        // Check ALL keys for arrays we might have missed
+        for (const key in data) {
+            if (data[key] && Array.isArray(data[key]) && data[key].length > 0) {
+                console.log('Trying array at key:', key);
                 const result = parseInstagramData(data[key]);
                 if (result.length > 0) {
                     return result;
@@ -122,9 +167,27 @@ function parseInstagramData(data) {
             }
         }
 
-        // If it's a direct object with string_list_data
-        if (data.string_list_data && data.string_list_data[0]) {
-            return [data.string_list_data[0].value];
+        // Check for nested objects that might contain arrays
+        for (const key in data) {
+            if (data[key] && typeof data[key] === 'object' && !Array.isArray(data[key])) {
+                console.log('Trying nested object at key:', key);
+                const result = parseInstagramData(data[key]);
+                if (result.length > 0) {
+                    return result;
+                }
+            }
+        }
+
+        // If it's a direct object with string_list_data - get ALL values
+        if (data.string_list_data && Array.isArray(data.string_list_data)) {
+            for (const entry of data.string_list_data) {
+                if (entry.value) {
+                    usernames.push(entry.value);
+                }
+            }
+            if (usernames.length > 0) {
+                return usernames;
+            }
         }
     }
 
