@@ -73,6 +73,16 @@ function handleFileUpload(event, type) {
     reader.readAsText(file);
 }
 
+// Validate if a string looks like a valid Instagram username
+function isValidUsername(str) {
+    if (!str || typeof str !== 'string') return false;
+    const trimmed = str.trim();
+    // Instagram usernames: 1-30 chars, only letters, numbers, periods, underscores
+    // Must not be purely numeric (would be a timestamp)
+    const usernameRegex = /^[a-zA-Z0-9._]{1,30}$/;
+    return usernameRegex.test(trimmed) && !/^\d+$/.test(trimmed);
+}
+
 function parseInstagramData(data) {
     // Instagram data can come in different formats
     // Try to extract usernames from various possible structures
@@ -84,44 +94,75 @@ function parseInstagramData(data) {
     if (Array.isArray(data)) {
         console.log('Data is an array with', data.length, 'items');
 
+        // Log first item structure for debugging
+        if (data.length > 0) {
+            console.log('First item structure:', JSON.stringify(data[0], null, 2));
+        }
+
+        let extractionMethod = '';
         for (const item of data) {
-            // Handle string_list_data - extract ALL users from it, not just first
-            if (item.string_list_data && Array.isArray(item.string_list_data)) {
+            // PRIORITY 1: Check title field first (newer Instagram export format uses this for username)
+            if (item.title && typeof item.title === 'string' && item.title.trim() !== '') {
+                if (!extractionMethod) extractionMethod = 'title';
+                usernames.push(item.title);
+            }
+            // PRIORITY 2: Handle string_list_data - extract usernames from value or href
+            else if (item.string_list_data && Array.isArray(item.string_list_data)) {
                 for (const entry of item.string_list_data) {
-                    if (entry.value) {
+                    if (entry.value && typeof entry.value === 'string') {
+                        if (!extractionMethod) extractionMethod = 'string_list_data.value';
                         usernames.push(entry.value);
                     } else if (entry.href) {
                         // Extract username from Instagram URL
                         const match = entry.href.match(/instagram\.com\/([^\/\?]+)/);
                         if (match) {
+                            if (!extractionMethod) extractionMethod = 'string_list_data.href';
                             usernames.push(match[1]);
                         }
                     }
                 }
             }
-            // Handle direct username property
+            // PRIORITY 3: Handle direct username property
             else if (item.username) {
+                if (!extractionMethod) extractionMethod = 'username';
                 usernames.push(item.username);
             }
-            // Handle direct value property
-            else if (item.value) {
+            // PRIORITY 4: Handle direct value property (only if it looks like a username, not a timestamp)
+            else if (item.value && typeof item.value === 'string' && isNaN(item.value)) {
+                if (!extractionMethod) extractionMethod = 'value';
                 usernames.push(item.value);
             }
-            // Handle string items
+            // PRIORITY 5: Handle string items
             else if (typeof item === 'string') {
+                if (!extractionMethod) extractionMethod = 'string';
                 usernames.push(item);
             }
-            // Handle nested user object
+            // PRIORITY 6: Handle nested user object
             else if (item.user && item.user.username) {
+                if (!extractionMethod) extractionMethod = 'user.username';
                 usernames.push(item.user.username);
             }
-            // Handle name property (some formats use this)
+            // PRIORITY 7: Handle name property (some formats use this)
             else if (item.name) {
+                if (!extractionMethod) extractionMethod = 'name';
                 usernames.push(item.name);
             }
         }
 
+        console.log('Extraction method used:', extractionMethod || 'none');
+
         console.log('Extracted', usernames.length, 'usernames from array');
+
+        // Filter out invalid usernames
+        const validUsernames = usernames.filter(u => {
+            const valid = isValidUsername(u);
+            if (!valid) {
+                console.log('Filtered out invalid username:', u);
+            }
+            return valid;
+        });
+        console.log('After validation:', validUsernames.length, 'valid usernames');
+        return validUsernames;
     }
     // Check if it's an object with a nested array
     else if (typeof data === 'object' && data !== null) {
@@ -186,13 +227,19 @@ function parseInstagramData(data) {
                 }
             }
             if (usernames.length > 0) {
-                return usernames;
+                // Filter and return valid usernames
+                const validUsernames = usernames.filter(u => isValidUsername(u));
+                console.log('After validation:', validUsernames.length, 'valid usernames');
+                return validUsernames;
             }
         }
     }
 
     console.log('Final extracted usernames:', usernames.length);
-    return usernames;
+    // Filter out invalid usernames before returning
+    const validUsernames = usernames.filter(u => isValidUsername(u));
+    console.log('After final validation:', validUsernames.length, 'valid usernames');
+    return validUsernames;
 }
 
 function compareFollowers() {
@@ -201,13 +248,20 @@ function compareFollowers() {
         return;
     }
 
-    // Convert followers to a Set for faster lookup
-    const followersSet = new Set(followersData.map(name => name.toLowerCase()));
+    console.log('\n=== COMPARISON ===');
+    console.log('Followers sample:', followersData.slice(0, 3));
+    console.log('Following sample:', followingData.slice(0, 3));
+
+    // Convert followers to a Set for faster lookup (normalized)
+    const followersSet = new Set(followersData.map(name => name.toLowerCase().trim()));
+    console.log('Unique followers:', followersSet.size);
 
     // Find people you follow who don't follow you back
     const notFollowingBack = followingData.filter(username => {
-        return !followersSet.has(username.toLowerCase());
+        return !followersSet.has(username.toLowerCase().trim());
     });
+
+    console.log('Result:', notFollowingBack.length, 'people dont follow you back');
 
     // Sort alphabetically
     notFollowingBack.sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
