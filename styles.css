@@ -487,4 +487,20 @@ body {
         padding: 0.4rem 1rem;
         font-size: 0.9rem;
     }
+
+    /* Stack username and profile link vertically on mobile */
+    .user-list li {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .user-list li span {
+        word-break: break-word;
+    }
+
+    .user-list li a {
+        float: none !important;
+        align-self: flex-start;
+    }
 }
