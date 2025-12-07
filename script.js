@@ -7,6 +7,12 @@ const compareBtn = document.getElementById('compareBtn');
 const resultsSection = document.getElementById('results');
 const followersStatus = document.getElementById('followersStatus');
 const followingStatus = document.getElementById('followingStatus');
+const saveFollowersBtn = document.getElementById('saveFollowersBtn');
+const saveInfo = document.getElementById('saveInfo');
+
+// LocalStorage key for saved followers
+const STORAGE_KEY = 'instagram_previous_followers';
+const STORAGE_DATE_KEY = 'instagram_followers_saved_date';
 
 // File upload handlers
 followersFileInput.addEventListener('change', (e) => handleFileUpload(e, 'followers'));
@@ -14,6 +20,12 @@ followingFileInput.addEventListener('change', (e) => handleFileUpload(e, 'follow
 
 // Compare button handler
 compareBtn.addEventListener('click', compareFollowers);
+
+// Save followers button handler
+saveFollowersBtn.addEventListener('click', saveCurrentFollowers);
+
+// Load saved info on page load
+updateSaveInfo();
 
 function handleFileUpload(event, type) {
     const file = event.target.files[0];
@@ -266,17 +278,22 @@ function compareFollowers() {
     // Sort alphabetically
     notFollowingBack.sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
 
+    // Find unfollowers
+    const unfollowerResult = findUnfollowers(followersData);
+    console.log('Unfollowers:', unfollowerResult.unfollowers.length);
+
     // Display results
-    displayResults(followersData.length, followingData.length, notFollowingBack);
+    displayResults(followersData.length, followingData.length, notFollowingBack, unfollowerResult);
 }
 
-function displayResults(followersCount, followingCount, notFollowingBack) {
+function displayResults(followersCount, followingCount, notFollowingBack, unfollowerResult) {
     // Update stats
     document.getElementById('totalFollowers').textContent = followersCount.toLocaleString();
     document.getElementById('totalFollowing').textContent = followingCount.toLocaleString();
     document.getElementById('notFollowingBack').textContent = notFollowingBack.length.toLocaleString();
+    document.getElementById('unfollowersCount').textContent = unfollowerResult.unfollowers.length.toLocaleString();
 
-    // Update list
+    // Update not following back list
     const listElement = document.getElementById('notFollowingList');
     listElement.innerHTML = '';
 
@@ -291,6 +308,39 @@ function displayResults(followersCount, followingCount, notFollowingBack) {
             `;
             listElement.appendChild(li);
         });
+    }
+
+    // Update unfollowers section
+    const unfollowersSection = document.getElementById('unfollowersSection');
+    const unfollowersList = document.getElementById('unfollowersList');
+    const unfollowersInfo = document.getElementById('unfollowersInfo');
+
+    if (unfollowerResult.hasPreviousData) {
+        unfollowersSection.style.display = 'block';
+
+        const dateStr = unfollowerResult.savedDate.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        });
+        unfollowersInfo.textContent = `Compared to your saved followers from ${dateStr}:`;
+
+        unfollowersList.innerHTML = '';
+
+        if (unfollowerResult.unfollowers.length === 0) {
+            unfollowersList.innerHTML = '<li style="text-align: center; color: #10b981; font-weight: 600;">🎉 No one has unfollowed you since then!</li>';
+        } else {
+            unfollowerResult.unfollowers.forEach(username => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <span>${username}</span>
+                    <a href="https://instagram.com/${username}" target="_blank" style="float: right; color: #ee5a24; text-decoration: none; font-weight: 600;">View Profile →</a>
+                `;
+                unfollowersList.appendChild(li);
+            });
+        }
+    } else {
+        unfollowersSection.style.display = 'none';
     }
 
     // Show results section
@@ -313,3 +363,88 @@ document.querySelectorAll('.nav-link').forEach(link => {
         }
     });
 });
+
+// Save current followers to localStorage
+function saveCurrentFollowers() {
+    if (!followersData || followersData.length === 0) {
+        alert('Please upload a followers file first!');
+        return;
+    }
+
+    try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(followersData));
+        localStorage.setItem(STORAGE_DATE_KEY, new Date().toISOString());
+        updateSaveInfo();
+        alert(`Saved ${followersData.length} followers. Next time you compare, we'll show who unfollowed you!`);
+    } catch (e) {
+        console.error('Failed to save to localStorage:', e);
+        alert('Failed to save. Your browser may have storage disabled.');
+    }
+}
+
+// Get previously saved followers from localStorage
+function getPreviousFollowers() {
+    try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+            return JSON.parse(saved);
+        }
+    } catch (e) {
+        console.error('Failed to load from localStorage:', e);
+    }
+    return null;
+}
+
+// Get saved date
+function getSavedDate() {
+    try {
+        const date = localStorage.getItem(STORAGE_DATE_KEY);
+        if (date) {
+            return new Date(date);
+        }
+    } catch (e) {
+        console.error('Failed to load date from localStorage:', e);
+    }
+    return null;
+}
+
+// Update the save info text
+function updateSaveInfo() {
+    const savedDate = getSavedDate();
+    const previousFollowers = getPreviousFollowers();
+
+    if (savedDate && previousFollowers) {
+        const dateStr = savedDate.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+        saveInfo.textContent = `Last saved: ${dateStr} (${previousFollowers.length} followers)`;
+    } else {
+        saveInfo.textContent = 'No previous followers saved. Save to track unfollowers next time!';
+    }
+}
+
+// Find unfollowers (people who were following before but aren't now)
+function findUnfollowers(currentFollowers) {
+    const previousFollowers = getPreviousFollowers();
+
+    if (!previousFollowers) {
+        return { unfollowers: [], hasPreviousData: false };
+    }
+
+    // Normalize for comparison
+    const currentSet = new Set(currentFollowers.map(u => u.toLowerCase().trim()));
+
+    // Find who was in previous but not in current
+    const unfollowers = previousFollowers.filter(username => {
+        return !currentSet.has(username.toLowerCase().trim());
+    });
+
+    // Sort alphabetically
+    unfollowers.sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+
+    return { unfollowers, hasPreviousData: true, savedDate: getSavedDate() };
+}

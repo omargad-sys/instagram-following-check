@@ -57,11 +57,26 @@
                     <div class="stat-number" id="notFollowingBack">0</div>
                     <div class="stat-label">Not Following Back</div>
                 </div>
+                <div class="stat-card unfollowers">
+                    <div class="stat-number" id="unfollowersCount">0</div>
+                    <div class="stat-label">Unfollowed You</div>
+                </div>
             </div>
 
             <div class="list-container">
                 <h3>People Not Following You Back:</h3>
                 <ul id="notFollowingList" class="user-list"></ul>
+            </div>
+
+            <div class="list-container" id="unfollowersSection" style="display: none;">
+                <h3>People Who Unfollowed You:</h3>
+                <p class="unfollowers-info" id="unfollowersInfo"></p>
+                <ul id="unfollowersList" class="user-list"></ul>
+            </div>
+
+            <div class="save-container">
+                <button id="saveFollowersBtn" class="save-btn">Save Current Followers List</button>
+                <p class="save-info" id="saveInfo"></p>
             </div>
         </div>
     </main>

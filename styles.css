@@ -283,6 +283,11 @@ body {
     box-shadow: 0 4px 15px rgba(245, 87, 108, 0.3);
 }
 
+.stat-card.unfollowers {
+    background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+    box-shadow: 0 4px 15px rgba(238, 90, 36, 0.3);
+}
+
 .stat-number {
     font-size: 2.5rem;
     font-weight: 700;
@@ -304,6 +309,43 @@ body {
     margin-bottom: 1rem;
     color: #333;
     font-size: 1.3rem;
+}
+
+.unfollowers-info {
+    color: #666;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+}
+
+.save-container {
+    margin-top: 2rem;
+    text-align: center;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(102, 126, 234, 0.2);
+}
+
+.save-btn {
+    padding: 0.8rem 2rem;
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+    border: none;
+    border-radius: 50px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+}
+
+.save-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 25px rgba(16, 185, 129, 0.4);
+}
+
+.save-info {
+    margin-top: 0.8rem;
+    color: #666;
+    font-size: 0.85rem;
 }
 
 .user-list {
